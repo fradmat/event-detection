@@ -1,0 +1,9 @@
+__pycache__/
+measurements_and_events_corrected_w_state_smooth_tlab/
+train*
+*.sh
+*.txt
+labeled_data/*
+experiments/*
+*spa*eng*
+labeled_data_old/*

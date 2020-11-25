@@ -1,0 +1,2 @@
+time,IP,FIR,PD,DML,LHD_det,elm_det,L_prob,H_prob,D_prob,ELM_prob
+0,1000000,1e+19,2,-0.001,1,0,0.318309886183791,2.71828182845905,0,1e-10
