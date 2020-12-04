@@ -11,7 +11,7 @@ from operator import itemgetter
 import sys
 
 def main(args):
-    train_dir = './experiments/' + sys.argv[1]
+    train_dir = '../experiments/' + sys.argv[1]
     params_fixed = load_exp_params(train_dir)
     print('Will save this model to', train_dir)
     dropout=False
@@ -23,7 +23,7 @@ def main(args):
         teacher_forcing = False
     if params_fixed['normalize_per_shot'] == 'False':
         normalize_per_shot = False
-    all_shots = [str(n) for n in params_fixed['all_shots'].replace(' ', '').split(',')]
+    # all_shots = [str(n) for n in params_fixed['all_shots'].replace(' ', '').split(',')]
     num_k_folds = int(params_fixed['num_k_folds'])
     val_shots = params_fixed['val_shots']
     train_shots = params_fixed['train_shots']
@@ -38,7 +38,7 @@ def main(args):
                 'epoch_size': int(params_fixed['epoch_size']), #
                 'num_epochs': int(params_fixed['num_epochs']), #
                 'stride':int(params_fixed['stride']),
-                'data_dir': './labeled_data/',
+                'data_dir': '../data/',
                 'labelers':params_fixed['labelers'].replace(' ', '').split(','),
                 'shuffle':bool(params_fixed['shuffle']),
                 'source_words_per_sentence': [int(n) for n in params_fixed['source_words_per_sentence'].replace(' ', '').split(',')],
@@ -52,6 +52,7 @@ def main(args):
     print('---------------------------------------------------------------')
     print('Using data from ' + params_fixed['machine_id'])
     print('---------------------------------------------------------------')
+    all_shots = os.listdir('../data')
     shots_per_fold = len(all_shots) // num_k_folds
     np.random.shuffle(all_shots)
     # print(all_shots, len(all_shots))
@@ -79,64 +80,22 @@ def main(args):
         indexes = (np.arange(shots_per_fold*k, shots_per_fold*k+ num_train_shots_p_k ) + shots_per_fold) %len(all_shots)
         if num_k_folds == 1:
             indexes = indexes[:int(.8*len(indexes))]
-        # train_ids = all_ids[indexes]
-        # val_ids = np.delete(all_ids, indexes)
-        # # print(train_ids, val_ids)
-        # train_shots = list(np.take(all_shots, train_ids))
-        # # train_shots = [53601, 47962, 61021, 31839, 33638, 31650, 31718, 45103, 32592, 30044, 33567, 26383, 52302, 32195, 26386, 59825, 33271, 56662, 57751, 58182, 33188, 30043, 32716, 42197, 33446, 48580, 57103]
-        # old_val_shots = val_shots
-        # val_shots = list(np.take(all_shots, val_ids))
-        # # val_shots = [30268, 61057, 30290, 30197, 43454, 30310, 60097, 32794, 60275, 33942, 33281, 42514, 62744, 30225, 29511, 34010, 31211, 34309, 32911, 31807, 33459, 57218, 32191, 58460, 31554, 30262, 45105]
-        # # val_shots = []
-        # print(train_shots)
-        # print(val_shots)
-        # print('intersection', set(train_shots) & set(val_shots))
-        # print('intersection', set(old_val_shots) & set(val_shots))
+        train_ids = all_ids[indexes]
+        val_ids = np.delete(all_ids, indexes)
+        # print(train_ids, val_ids)
+        train_shots = list(np.take(all_shots, train_ids))
+        # train_shots = [53601, 47962, 61021, 31839, 33638, 31650, 31718, 45103, 32592, 30044, 33567, 26383, 52302, 32195, 26386, 59825, 33271, 56662, 57751, 58182, 33188, 30043, 32716, 42197, 33446, 48580, 57103]
+        old_val_shots = val_shots
+        val_shots = list(np.take(all_shots, val_ids))
+        # val_shots = [30268, 61057, 30290, 30197, 43454, 30310, 60097, 32794, 60275, 33942, 33281, 42514, 62744, 30225, 29511, 34010, 31211, 34309, 32911, 31807, 33459, 57218, 32191, 58460, 31554, 30262, 45105]
+        # val_shots = []
+        print(train_shots)
+        print(val_shots)
+        print('intersection', set(train_shots) & set(val_shots))
+        print('intersection', set(old_val_shots) & set(val_shots))
         # continue
-        
-        train_shots = []
-        val_shots = []
-        
-        train_shots_gino_apau=[64060, 60992, 60995, 64067, 61000, 61005, 61009, 61010, 61038, 61039, 61043, 64647, 64648,
-                     64658, 64659, 64662, 64666, 64670, 64675, 64678, 57000, 64680, 64686, 57009, 57010, 57011,
-                     59061, 57013, 59064, 59065, 59066, 61630, 61631, 57024, 59073, 57026, 59076, 57077, 57081,
-                     64770, 57093, 64774, 57095, 61702, 57094, 61703, 61711, 61712, 61713, 61714, 61716, 57622,
-                     57623, 57624, 61719, 64820, 61237, 61242, 61246, 61254, 64327, 61260, 64335, 64336, 64340,
-                     64342, 61274, 61275, 61279, 61281, 63843, 57706, 64363, 64364, 64369, 57715, 64371, 64373,
-                     53623, 64376, 53625, 53627, 53629, 57732, 60812, 60813, 60814, 60830]
-        train_shots.extend(train_shots_gino_apau)
-        # train_shots.extend([64060, 60992, 60995, 64067, 61000])
-        # train_shots_ff_mau_ben = [61057,57103,26386,33459,43454,34010,32716,32191,61021,33638,30197,31839,60097,60275,
-        #                         32195,32911,59825,53601,34309,30268,31650,31554,42514,26383,48580,62744,32794,30310,
-        #                         31211,31807,47962,57751,31718,58460,57218,33188,56662,33271,30290,42197,33281,30225,
-        #                         58182,32592,30044,30043,29511,33942,45105,52302,30262,45103]
-        train_shots_ff_mau_ben =[
-                                30268, 61057, 30290, 30197,
-                                 43454, 30310, 60097, 32794, 60275, 33942,33281, 42514, 62744, 30225,
-                                 29511, 34010, 31211, 34309, 32911, 31807,33459, 57218, 32191, 58460,
-                                 31554, 30262, 45105, 53601, 47962, 61021,31839, 33638, 31650, 31718,
-                                 45103, 32592, 30044,
-                                 33567, 26383, 52302,32195, 26386, 59825, 33271,
-                                 56662, 57751, 58182, 33188, 30043, 32716,42197, 33446, 48580, 57103]
-        train_shots.extend(train_shots_ff_mau_ben)
-        
-        val_shots_new = [59073, 61714, 61274, 59065, 61010, 61043, 64770, 64774, 64369, 64060, 64662, 64376, 57093, 57095,
-                   61021, 32911, 30268, 45105, 62744, 60097, 58460, 61057, 31807, 33459, 34309, 53601, 42197]
-        val_shots.extend(val_shots_new)
-        # val_shots_old_paper = [30268, 61057, 30290, 30197, 43454, 30310, 60097, 32794, 60275, 33942, 33281, 42514,
-        #            62744, 30225, 29511, 34010, 31211, 34309, 32911, 31807, 33459, 57218, 32191, 58460, 31554, 30262, 45105] #old_paper
-        
-        
-        # jet_train_shots = [94778, 94969, 94971, 96995]
-        # jet_val_shots = [94652, 94658, 94785, 94792, 94967, 94968, 94972, 94973, 95298, 97405, 97469, 97470, 97476, 97477, 97478, 97828]
-        # train_shots.extend(jet_train_shots)
-        # val_shots.extend(jet_val_shots)
-
-        # train_shots = train_shots.replace('\'', '').split(',')
-        # train_shots = [int(s) for s in train_shots]
-        # val_shots = val_shots.replace('\'', '').split(',')
-        # val_shots = [int(s) for s in val_shots]
-        
+       
+       
         train_shots = set(train_shots)
         val_shots = set(val_shots)
         train_shots = list(train_shots - val_shots)

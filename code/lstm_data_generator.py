@@ -13,7 +13,7 @@ import random
 import matplotlib.pyplot as plt
 from matplotlib import colors as mcolors
 import glob
-from cnn_data_generator import CNNAugmentedDataFetcher, CNNRandomDataFetcher, IDsAndLabelsCNN
+# from cnn_data_generator import CNNAugmentedDataFetcher, CNNRandomDataFetcher, IDsAndLabelsCNN
 from plot_routines import *
 
 class IDsAndLabels(object):
@@ -78,13 +78,14 @@ class IDsAndLabelsLSTM(IDsAndLabels):
 class LSTMDataGenerator():
     def __init__(self, shot_ids=[], batch_size=16, n_classes=7, shuffle=True,
                  lstm_time_spread=150, epoch_size=20700, train_data_name = '', conv_w_size=40, no_input_channels = 3,
-                 gaussian_hinterval=10, no_classes=3, stride=1, labelers = [],conv_w_offset=20, fixed_inds=None, signal_sampling_rate=1e4, machine_id='TCV', normalize_per_shot=True):
+                 gaussian_hinterval=10, no_classes=3, stride=1, labelers = [],conv_w_offset=20, fixed_inds=None, signal_sampling_rate=1e4, machine_id='TCV',
+                 normalize_per_shot=True, data_dir = './labeled_data/TCV/'):
 
         
         
         self.initialize(shot_ids, batch_size, n_classes, shuffle,lstm_time_spread, epoch_size,
                         train_data_name, conv_w_size, no_input_channels,gaussian_hinterval,
-                        no_classes, stride, labelers,conv_w_offset, fixed_inds, signal_sampling_rate, machine_id, normalize_per_shot)
+                        no_classes, stride, labelers,conv_w_offset, fixed_inds, signal_sampling_rate, machine_id, normalize_per_shot, data_dir)
         self.first_prepro_cycle()
         self.sec_prepro_cycle()
         self.third_prepro_cycle()
@@ -143,9 +144,12 @@ class LSTMDataGenerator():
         
     def initialize(self,shot_ids, batch_size, n_classes, shuffle,lstm_time_spread, epoch_size,
                         train_data_name, conv_w_size, no_input_channels,gaussian_hinterval,
-                        no_classes, stride, labelers,conv_w_offset, fixed_inds, signal_sampling_rate, machine_id='tcv', normalize_per_shot=True):
+                        no_classes, stride, labelers,conv_w_offset, fixed_inds, signal_sampling_rate, machine_id='tcv', normalize_per_shot=True,
+                        data_dir = './labeled_data/TCV'):
+        # print(shot_ids)
+        # exit(0)
         self.batch_size = batch_size
-        self.data_dir = './labeled_data/' + machine_id + '/'
+        self.data_dir = data_dir
         
         self.lstm_time_spread = int(lstm_time_spread)
         self.ids_trans = IDsAndLabelsLSTM()
@@ -169,6 +173,8 @@ class LSTMDataGenerator():
         for s in shot_ids:
             for l in self.labelers:
                 self.shot_ids += (str(s) + '-' + str(l),)
+                # print(s, l)
+                # exit(0)
             #for each shot, get times where there is no consensus
             # try:
             intc_times = load_shot_and_equalize_times(self.data_dir, s, self.labelers, signal_sampling_rate)
@@ -181,7 +187,7 @@ class LSTMDataGenerator():
             # labeler_states, labeler_elms = get_different_labels(self.data_dir, s, self.labelers, intc_times)
             # mode_labeler_states = calc_consensus(labeler_states.swapaxes(0,1))
            
-            
+        # exit(0)
         # print('hrthrth')    
         self.shuffle = shuffle
         self.length = epoch_size
@@ -201,16 +207,16 @@ class LSTMDataGenerator():
         self.conv_w_offset = conv_w_offset
         self.fixed_inds = fixed_inds
         
-        
-        self.ids_non_trans = IDsAndLabelsCNN()
-        self.ids_lh_trans = IDsAndLabelsCNN()
-        self.ids_hl_trans = IDsAndLabelsCNN()
-        self.ids_hd_trans = IDsAndLabelsCNN()
-        self.ids_dh_trans = IDsAndLabelsCNN()
-        self.ids_ld_trans = IDsAndLabelsCNN()
-        self.ids_dl_trans = IDsAndLabelsCNN()
-        self.ids_elms = IDsAndLabelsCNN()
-        self.ids_dithers = IDsAndLabelsCNN()
+        # 
+        # self.ids_non_trans = IDsAndLabelsCNN()
+        # self.ids_lh_trans = IDsAndLabelsCNN()
+        # self.ids_hl_trans = IDsAndLabelsCNN()
+        # self.ids_hd_trans = IDsAndLabelsCNN()
+        # self.ids_dh_trans = IDsAndLabelsCNN()
+        # self.ids_ld_trans = IDsAndLabelsCNN()
+        # self.ids_dl_trans = IDsAndLabelsCNN()
+        # self.ids_elms = IDsAndLabelsCNN()
+        # self.ids_dithers = IDsAndLabelsCNN()
         self.gaussian_hinterval = gaussian_hinterval
         self.machine_id = machine_id
         
@@ -489,119 +495,6 @@ class LSTMDataGenerator():
                 counter = -21
                 trans = True
         return block_ids, tot_block_len
-        
-# class LSTMDataGeneratorConsensus(LSTMDataGenerator):
-#     def __init__(self, shot_ids=[], batch_size=16, n_classes=7, shuffle=True,
-#                  lstm_time_spread=150, epoch_size=20700, train_data_name = '', conv_w_size=40, no_input_channels = 3,
-#                  gaussian_hinterval=10, no_classes=3, stride=1, labelers = [],conv_w_offset=20, fixed_inds=None):
-# 
-#         super().initialize(shot_ids, batch_size, n_classes, shuffle,lstm_time_spread, epoch_size,
-#                         train_data_name, conv_w_size, no_input_channels,gaussian_hinterval,
-#                         no_classes, stride, labelers,conv_w_offset, fixed_inds)
-#         self.mode_labeler_states = {}
-#         for s in shot_ids:
-#             # print(s)
-#             labeler_states, labeler_elms = get_different_labels(self.data_dir, s, self.labelers, self.intc_times[str(s)])
-#             self.mode_labeler_states[str(s)] = calc_consensus(labeler_states.swapaxes(0,1))
-#         # exit(0)
-#         super().first_prepro_cycle()
-#         super().sec_prepro_cycle()
-#         
-#         for shot in self.shot_ids:
-#             print(shot)
-#             fshot = self.shot_dfs[str(shot)].reset_index(drop=True)
-#             consensus_labels = self.mode_labeler_states[shot[:5]]
-#             # print(len(consensus_labels),  len(fshot))
-#             assert len(consensus_labels) == len(fshot)
-#             fshot['LHD_label'] = consensus_labels #redundant, but...
-#             # print(fshot)
-#             # plt.plot(consensus_labels)
-#             # plt.plot(fshot['LHD_label'])
-#             # plt.show()
-#             assert(len(fshot) == len(consensus_labels))
-#         
-#             for k in range(len(fshot) - lstm_time_spread):
-#                 dt = fshot.iloc[k]
-#                 dt_forward = fshot.iloc[k + lstm_time_spread]
-#                 if dt.LHD_label == -1 or dt_forward.LHD_label == -1:
-#                     # print('removing', k,  dt.time, 'from shot', shot)
-#                     continue
-#                 # print('keeping', k, dt.time, 'from shot', shot)
-#                 elm_lab_in_dt = get_elm_label_in_dt(dt)
-#                 state_lab_in_dt = get_state_labels_in_dt(dt)
-#                 if state_lab_in_dt[1] > .99:
-#                     self.ids_low.add_id(shot, k, elm_lab_in_dt, state_lab_in_dt)  
-#                 elif state_lab_in_dt[2] >.99:
-#                     self.ids_dither.add_id(shot, k, elm_lab_in_dt, state_lab_in_dt)
-#                 elif elm_lab_in_dt[0] != 0:
-#                     self.ids_high.add_id(shot, k, elm_lab_in_dt, state_lab_in_dt)
-# 
-#             self.shot_dfs[str(shot)] = fshot.copy()
-#         
-#         
-#         print(len(self.ids_low), len(self.ids_dither), len(self.ids_high))
-#         
-#         samples_per_type = batch_size//4
-#         self.high_generator = LSTMRandomDataFetcherEndtoEndWOffset('High',
-#                                                  self.ids_high,
-#                                                  self.data_dir,
-#                                                  self.lstm_time_spread, 
-#                                                 samples_per_type,
-#                                                 n_classes,
-#                                                 self.shuffle,
-#                                                 self.conv_w_size,
-#                                                 self.no_input_channels,
-#                                                 self.shot_dfs,
-#                                                 self.no_classes,
-#                                                 self.stride,
-#                                                 self.conv_w_offset)
-#         self.dither_generator = LSTMRandomDataFetcherEndtoEndWOffset('Dither',
-#                                                  self.ids_dither,
-#                                                  self.data_dir,
-#                                                  self.lstm_time_spread, 
-#                                                 samples_per_type,
-#                                                 n_classes,
-#                                                 self.shuffle,
-#                                                 self.conv_w_size,
-#                                                 self.no_input_channels,
-#                                                 self.shot_dfs,
-#                                                 self.no_classes,
-#                                                 self.stride,
-#                                                 self.conv_w_offset)
-#         self.low_generator = LSTMRandomDataFetcherEndtoEndWOffset('Low',
-#                                                  self.ids_low,
-#                                                  self.data_dir,
-#                                                  self.lstm_time_spread, 
-#                                                 samples_per_type,
-#                                                 n_classes,
-#                                                 self.shuffle,
-#                                                 self.conv_w_size,
-#                                                 self.no_input_channels,
-#                                                 self.shot_dfs,
-#                                                 self.no_classes,
-#                                                 self.stride,
-#                                                 self.conv_w_offset)
-#         
-#         self.sub_generators = [self.low_generator, self.dither_generator, self.high_generator, self.dither_generator]
-        # self.sub_generators = [self.dither_generator, self.dither_generator, self.dither_generator, self.dither_generator]
-        # def third_prepro_cycle(self,):
-        #     for shot in self.shot_ids:
-        #         fshot = self.shot_dfs[str(shot)]
-        #         consensus_labels = self.mode_labeler_states[shot]
-        #         assert(len(fshot) == len(consensus_labels))
-        # 
-        #     for k in range(len(fshot)):
-        #         dt = fshot.iloc[k]
-        #         
-        #         elm_lab_in_dt = get_elm_label_in_dt(dt)
-        #         state_lab_in_dt = get_state_labels_in_dt(dt)
-        #         if state_lab_in_dt[1] > .99:
-        #             self.ids_low.add_id(shot, k, elm_lab_in_dt, state_lab_in_dt)  
-        #         elif state_lab_in_dt[2] >.99:
-        #             self.ids_dither.add_id(shot, k, elm_lab_in_dt, state_lab_in_dt)
-        #         elif elm_lab_in_dt[0] != 0:
-        #             self.ids_high.add_id(shot, k, elm_lab_in_dt, state_lab_in_dt)
-        
         
  
             

@@ -1025,10 +1025,12 @@ def get_roc_best(roc_curve):
 def load_fshot_from_labeler(shot_id, machine_id, data_dir):
     # print(shot_id)
     shot, labeler = shot_id.split('-')
-    
+    # print(shot, labeler, data_dir)
+    # print(data_dir + labeler + '/' + machine_id + '_'  + str(shot) + '_' + labeler + '_labeled.csv')
+    # exit(0)
     fshot = pd.read_csv(data_dir + labeler + '/' + machine_id + '_'  + str(shot) + '_' + labeler + '_labeled.csv')
     # print('fshot1', fshot.shape)
-    fshot = remove_current_30kA(fshot)
+    # fshot = remove_current_30kA(fshot)
     # print('fshot2', fshot.shape)
     fshot = remove_no_state(fshot)
     # print('fshot3', fshot.shape)
@@ -1037,9 +1039,11 @@ def load_fshot_from_labeler(shot_id, machine_id, data_dir):
     fshot = normalize_current_MA(fshot)
     fshot = fshot.reset_index(drop=True)
     # print('fshot4', fshot.shape)
-    fshot = remove_disruption_points(fshot)
+    # fshot = remove_disruption_points(fshot)
     # print(shot, labeler, data_dir + labeler, 'shot len:', len(fshot))
     # print('fshot5', fshot.shape)
+    
+    # exit(0)
     return fshot, fshot.time.values
 
 def load_fshot_from_number(shot_num, machine_id, data_dir, labelers):
@@ -1203,6 +1207,7 @@ def load_dic(name):
     
 def load_shot_and_equalize_times(data_dir, shot, labelers, signal_sampling_rate):
     print('------------------------Reading shot', shot, '------------------------------------')
+    
     # fshot = pd.read_csv(data_dir + labelers[0] + '/TCV_'  + str(shot) + '_' + labelers[0] + '_labeled.csv', encoding='utf-8')
     # shot_df = fshot.copy()
     # shot_df = remove_current_30kA(shot_df)
@@ -1216,8 +1221,11 @@ def load_shot_and_equalize_times(data_dir, shot, labelers, signal_sampling_rate)
     # exit(0)
     # if len(labelers) > 1:
     for k, labeler in enumerate(labelers):
+        # print(shot)
+        # print(data_dir+ labeler +'/DUMMY_'  + str(shot) + '_' + labeler + '_labeled.csv')
+        # exit(0)
         try:
-            fshot_labeled = pd.read_csv(data_dir+ labeler +'/TCV_'  + str(shot) + '_' + labeler + '_labeled.csv', encoding='utf-8')
+            fshot_labeled = pd.read_csv(data_dir+ labeler +'/DUMMY_'  + str(shot) + '_' + labeler + '_labeled.csv', encoding='utf-8')
             fshot_labeled = remove_current_30kA(fshot_labeled)
             fshot_labeled = remove_no_state(fshot_labeled)
             fshot_labeled = remove_disruption_points(fshot_labeled)

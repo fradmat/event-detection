@@ -3,282 +3,13 @@ from label_smoothing import get_trans_ids
 from os import listdir
 from window_functions import get_states_categorical
 
-# class SequenceToSequenceDataGenerator(LSTMDataGenerator):
-#     def __init__(self, shot_ids=[], batch_size=16, n_classes=7, shuffle=True,
-#                  lstm_time_spread=200, epoch_size=20700, train_data_name = '', conv_w_size=40, no_input_channels = 4,
-#                  gaussian_hinterval=10, no_classes=3, stride=1, labelers = [],conv_w_offset=0, fixed_inds=None, block_size=10,
-#                  latent_dim = None, num_epochs = None, data_dir=None, source_words_per_sentence=8, target_words_per_sentence = 8, look_ahead=10):
-# 
-#         self.block_size = block_size
-#         self.train_subsequence_size = lstm_time_spread
-#         self.train_block_subseq_size = self.train_subsequence_size // self.block_size
-#         self.n_classes = n_classes
-#         super().initialize(shot_ids, batch_size, n_classes, shuffle,lstm_time_spread, epoch_size,
-#                         train_data_name, conv_w_size, no_input_channels,gaussian_hinterval,
-#                         no_classes, stride, labelers,conv_w_offset, fixed_inds)
-#         
-# 
-#         self.first_prepro_cycle()
-#         # print('finished first prepro cycle')
-#         # exit(0)
-#         super().sec_prepro_cycle()
-#         # print('finished second prepro cycle')
-#         # self.block_dfs = {} #blocks matching shot labelings
-#         self.source_numbers_words = source_words_per_sentence
-#         self.target_numbers_words = target_words_per_sentence
-#         self.trans_samples = {key: [] for key in self.source_numbers_words}
-#         self.non_trans_samples = {key: [] for key in self.source_numbers_words}
-#         self.look_ahead = look_ahead
-#         
-#         self.third_prepro_cycle()
-#         
-#         
-#         samples_per_type = batch_size
-#     
-#     
-#     def first_prepro_cycle(self,):
-#         gaussian_hinterval = self.gaussian_hinterval
-#         print('asdasd')
-#         exit(0)
-#         for shot in self.shot_ids:
-#             # try:
-#             fshot, fshot_times = load_fshot_from_labeler(shot, machine_id, self.data_dir)
-#             # except:
-#                 # continue
-#             # fshot['sm_elm_label'], fshot['sm_non_elm_label'] = smoothen_elm_values(fshot.ELM_label.values, smooth_window_hsize=gaussian_hinterval)
-#             fshot['sm_none_label'], fshot['sm_low_label'], fshot['sm_high_label'], fshot['sm_dither_label'] = smoothen_states_values_gauss(fshot.LHD_label.values,
-#                                                                                                                                             fshot.time.values,
-#                                                                                                                                             smooth_window_hsize=gaussian_hinterval)
-#             #CUTOFF to put all elm labels at 0 where state is not high
-#             fshot.loc[fshot['LHD_label'] != 3, 'ELM_label'] = 0
-#             
-#             fshot = state_to_trans_event_disc(fshot, gaussian_hinterval)
-#             # fshot = trans_disc_to_cont(fshot, gaussian_hinterval)
-#         
-#             self.shot_dfs[str(shot)] = fshot.copy()
-#     
-#         # exit(0)
-#     
-#     def third_prepro_cycle(self,):
-#         for shot_id in self.shot_ids: #shot_id refers not just to a shot, but also to a labeler of that shot!
-#             # print(shot_id)
-#             fshot = self.shot_dfs[str(shot_id)]
-#             signal_sequence = get_raw_signals_in_window(fshot).swapaxes(0,1)
-#             times = fshot.time.values
-#             start_block = np.zeros((self.block_size, self.n_classes))
-#             transitions = np.concatenate([start_block, get_transitions_in_window(fshot)])
-#             # print(transitions.shape)
-#             # exit(0)
-#             # signal_sequence = get_transitions_in_window(fshot)
-#             # block_sequence = np.zeros((len(fshot)//self.block_size + 1, self.n_classes)) # +1 due to start character
-#             # print(block_sequence.shape)
-#             # plt.plot(times, fshot.PD.values)
-#             # plt.plot(times, transitions[self.block_size:])
-#             # plt.show()
-#             
-#             for source_num_words, target_num_words in zip(self.source_numbers_words, self.target_numbers_words):
-#                 source_num_chars = self.stride * (source_num_words - 1) + self.conv_w_size
-#                 # print(source_num_chars)
-#                 subseqs_in_shot = len(fshot) - source_num_chars - self.look_ahead + 1
-#                 for source_ind in range(self.look_ahead, subseqs_in_shot, 1): #, self.train_subsequence_size self.block_size, 1
-#                     # source_start = source_ind - self.look_ahead
-#                     # source_end = source_ind + source_num_chars + self.look_ahead
-#                     # print(source_num_chars, look_ahead_source_start, look_ahead_source_end)
-#                     # exit(0)
-#                     signal_subsequence = signal_sequence[source_ind : source_ind + source_num_chars]
-#                     times_subsequence = times[source_ind : source_ind + source_num_chars]
-#                     times_subsequence_disloc = times[source_ind - self.block_size: source_ind + source_num_chars]
-#                     # there might be a minor bug (non-critical) in the line above
-#                     # matching dislocated times for transitions (which have been dislocated to the future by 1 block)
-#                     target_subsequence = transitions[source_ind + self.look_ahead : source_ind + source_num_chars + self.block_size - self.look_ahead]
-#                     #we need an additional block_size index at the end to fetch the shifted block for teaching forcing during training
-#                     
-#                     # print(signal_subsequence.shape, target_subsequence.shape, times_subsequence.shape, times_subsequence_disloc.shape)
-#                     # exit(0)   
-#                     block_sequence = np.zeros((target_num_words + 1, self.n_classes)) #+1 for shifted sequence
-#                     shifted_block_sequence = np.zeros((target_num_words, self.n_classes))
-#                     target_num_chars = self.block_size * target_num_words
-#                     # if target_num_chars > (len(target_subsequence) - self.block_size):
-#                     if source_num_chars < target_num_chars + 2 * self.look_ahead: #+ self.block_size 
-#                         print(source_num_chars, target_num_chars + self.block_size + 2 * self.look_ahead)
-#                         print('Target sequences must be (in terms of total time slices/chars,', target_num_chars, '),')
-#                         print('shorter than or equal to the source sequences, (len=', len(signal_subsequence), 'timeslices/chars)')
-#                         print('minus the forward and backward look-ahead (', self.look_ahead, 'each)')
-#                         # print('minus the size of a block (', self.block_size,' ),')
-#                         print('i.e., shorter than or equal to', len(signal_subsequence)-2*self.look_ahead, '.') #-self.block_size, 
-#                         print('Either decrease the number of target words/blocks (or their size),')
-#                         print('Or, increase the number of source words/conv. windows (or their size), or their convolutional stride.')
-#                         exit(0)
-# 
-#                     # + self.block_size due to extra index for teacher forcing
-#                     for k,l in enumerate(range(0, target_num_chars + self.block_size, self.block_size)):
-#                         block = np.zeros((1, self.n_classes))
-#                         # print(l, l + self.block_size, len(target_subsequence))
-#                         assert l + self.block_size <= len(target_subsequence)
-#                         block_transitions = target_subsequence[l : l + self.block_size]
-#                         if np.array_equal(block, block_transitions[:1]):
-#                             # print('START')
-#                             block_sequence[k] = block
-#                             continue                       
-#                         trans_s = (np.sum(block_transitions[:, :-1], axis=0)>=1).astype(float) #there should be at most one element in this array with a value of 1! (because there are no transitions within block_size of each other)
-#                         trans_where = np.where(trans_s == 1)[0]
-#                         if len(trans_where) > 1:
-#                             # print(shot_id, k, l, source_num_words, target_num_words, target_num_chars + self.block_size)
-#                             # print(times_subsequence_disloc)
-#                             # print(target_subsequence)
-#                             print('block size too large, found two transitions within same block in shot', shot_id, 'from t =',times_subsequence_disloc[l], 'to', times_subsequence_disloc[l+self.block_size-1])
-#                         assert len(trans_where) <= 1 #if greater, we have two transitions in the same block, which can not be!
-#                         if len(trans_where) > 0: #there is one transition in this block
-#                             # block_subsequence[l//self.block_size, trans_where[0]] = 1
-#                             block[:,trans_where[0]]= 1
-#                             # block[:,trans_where[0]+1]= 1
-#                             # assert(np.sum(block) <= 1) #make sure there isn't more than 1 transition in a block
-#                             # block_sequence[k] = block
-#                             # trans_in_block = True
-#                         else:
-#                             block[:,-1]= 1
-#                         block_sequence[k] = block
-#                     shifted_block_sequence = block_sequence[1:]
-#                     block_sequence = block_sequence[:-1]
-#                     trans_in_block = (np.sum(shifted_block_sequence[:, :-1])>=1).astype(float).astype(bool)
-#                     # print(k, k + self.train_subsequence_size, k//self.train_block_subseq_size, k//self.train_block_subseq_size +self.train_block_subseq_size)
-#                     # print(signal_sequence.shape, block_sequence.shape)
-#                     # windowed_signal = np.empty((int((self.train_subsequence_size-self.conv_w_size + self.stride)/self.stride), self.conv_w_size, self.no_input_channels))
-#                     windowed_signal = np.empty((source_num_words, self.conv_w_size, self.no_input_channels))
-#                     # print(windowed_signal.shape)
-#                     # exit(0)
-#                     # windowed_signal = np.empty((int((self.train_subsequence_size-self.conv_w_size + self.stride)/self.stride), self.conv_w_size, self.no_input_channels))
-#                     for m in range(len(windowed_signal)):
-#                         # print(m*self.stride)
-#                         windowed_signal[m] = signal_subsequence[m*self.stride : m*self.stride+self.conv_w_size] #2:3
-#                         
-#                     # past_windowed_signal = np.empty((int((self.train_subsequence_size-self.conv_w_size + self.stride)/self.stride), self.conv_w_size, self.no_input_channels))
-#                     # # windowed_signal = np.empty((int((self.train_subsequence_size-self.conv_w_size + self.stride)/self.stride), self.conv_w_size, self.no_input_channels))
-#                     # for m in range(len(past_windowed_signal)):
-#                         # past_windowed_signal[m] = past_signal_subsequence[m*self.stride : m*self.stride+self.conv_w_size] #2:3
-#                     
-#                     if trans_in_block:
-#                         self.trans_samples[source_num_words].append({'input': [windowed_signal,], 'output': [block_sequence, shifted_block_sequence], 'control':[times_subsequence, shot_id]})
-#                         # plot_windows_blocks(windowed_signal, block_sequence, shifted_block_sequence, times_subsequence, shot_id, self.stride, self.conv_w_size, self.block_size)
-#                     else:
-#                         # print(times_subsequence[0], times_subsequence[-1], windowed_signal[0, 0, 2])
-#                         self.non_trans_samples[source_num_words].append({'input': [windowed_signal,], 'output': [block_sequence, shifted_block_sequence], 'control':[times_subsequence, shot_id]})
-#                         # plot_windows_blocks(windowed_signal, block_sequence, shifted_block_sequence, times_subsequence, shot_id, self.stride, self.conv_w_size, self.block_size)
-#                 random.shuffle(self.trans_samples[source_num_words])
-#                 random.shuffle(self.non_trans_samples[source_num_words])
-#         # print(self.trans_samples, self.non_trans_samples)
-#         print('Data generator ready. ')
-#         # exit(0)
-#             
-#         
-#     def __len__(self):
-#         'Denotes the number of batches per epoch'
-#         return self.length
-#     
-#     def __getitem__(self, index):
-#         
-#         # print 'Generate one batch of data', len(self.sub_generators)
-#         batch_X_scalars, batch_y_seq, batch_control = [], [], []
-#         batch = []
-#         # for sub_generator in self.sub_generators:
-#             # print('fixed_inds', self.fixed_inds)
-#             # exit()
-#             # X_scalars, y_block_trans, y_ts, y_sh = sub_generator[[index, self.fixed_inds]]
-#         # batch = self.trans_samples[:self.batch_size//2]
-#         # print(len(self.trans_samples))
-#         # print(len(self.trans_samples))
-#         # exit(0)
-#         # print(self.trans_samples[0])
-#         batch_timestep_size = np.random.choice(self.source_numbers_words)
-#         for k in range(self.batch_size//2): #//2
-#             # print(len(batch))
-#             sample = [self.trans_samples[batch_timestep_size].pop(0)]
-#             # print(np.mean(sample[0]['input']))
-#             batch.extend(sample)
-#             self.trans_samples[batch_timestep_size].extend(sample)
-#             sample = [self.non_trans_samples[batch_timestep_size].pop(0)]
-#             self.non_trans_samples[batch_timestep_size].extend(sample)
-#             batch.extend(sample)
-#         # exit(0)
-#         # batch.extend(self.non_trans_samples[:self.batch_size//2])
-#         # X_scalars, y_block_trans, y_ts, y_sh
-#         # print(len(batch))
-#         # 
-#         # # exit(0)
-#         for k in range(len(batch)):
-#             X_scalars, y_block_trans, y_control = batch[k]['input'], batch[k]['output'], batch[k]['control']
-#             batch_X_scalars += [X_scalars]
-#             batch_y_seq += [y_block_trans]
-#             batch_control += [y_control]
-#             # print(len(batch_X_scalars))
-#                 
-#         batch_X_scalars = np.asarray(batch_X_scalars)
-#         batch_y_seq = np.asarray(batch_y_seq)
-#         batch_control = np.asarray(batch_control)
-#         # print(batch_X_scalars.shape, batch_y_seq.shape, batch_control.shape)
-#         # exit(0)
-#         aux = list(zip(
-#                         np.asarray(batch_X_scalars),
-#                         np.asarray(batch_y_seq),
-#                         np.asarray(batch_control),
-#                         ))
-#         # random.shuffle(aux)
-#         batch_X_scalars, batch_y_seq, batch_control = zip(*aux)
-#         batch_y_seq = np.asarray(batch_y_seq)
-#         # print(np.asarray(batch_y_seq).shape)
-#         # print(np.sum(batch_y_seq, axis=-1))
-#         # checksum = np.ones(batch_y_seq.shape[:-1])
-#         # print(np.sum(batch_y_seq, axis=-1))
-#         # assert np.array_equal(checksum, np.sum(batch_y_seq, axis=-1))
-#         # print(np.asarray(batch_X_scalars)[:, 0].shape)
-#         # exit(0)
-#         return (
-#                 {
-#                     'encoder_inputs':np.asarray(batch_X_scalars, dtype=np.float32)[:, 0], #[:, :, 0, :]
-#                     # 'past_encoder_inputs':np.asarray(batch_X_scalars)[:, 1],
-#                     'decoder_inputs': np.asarray(batch_y_seq, dtype=np.float32)[:, 0]
-#                 },
-#                 {
-#                     
-#                     'decoder_outputs':np.asarray(batch_y_seq, dtype=np.float32)[:, 1],
-#                     'control': np.asarray(batch_control)
-#                 },
-#                 # {
-#                 #     'control': np.asarray(batch_control)
-#                 #     
-#                 # }
-#                 )
-#     
-#     def __iter__(self):
-#         return self
-#     
-#     def __next__(self):
-#         while True:
-#             # if self.shuffle == True:
-#                 # print('Generator epoch finished, reshuffling...')
-#                 # self.on_epoch_end()
-#             for item in (self[i] for i in range(len(self))):
-#                 yield item
-#             # for sub_generator in self.sub_generators:
-#             #         sub_generator.on_epoch_end()
-#             self.on_epoch_end()
-#             
-#             
-#             
-#     def on_epoch_end(self):
-#         # print("Epoch finished, reshuffling...")
-#         for val in self.source_numbers_words:
-#             random.shuffle(self.trans_samples[val])
-#             random.shuffle(self.non_trans_samples[val])
-#         pass
-
 
 class SequenceToSequenceStateGenerator(LSTMDataGenerator):
     def __init__(self, shot_ids=[], batch_size=16, n_classes=7, shuffle=True,
                  lstm_time_spread=200, epoch_size=20700, train_data_name = '', conv_w_size=40, no_input_channels = 4,
                  gaussian_hinterval=10, no_classes=3, stride=1, labelers = [],conv_w_offset=0, fixed_inds=None, block_size=10,
                  latent_dim = None, num_epochs = None, data_dir=None, source_words_per_sentence=8, target_words_per_sentence = 8,
-                 signal_sampling_rate=1e4, look_ahead=10, machine_id = 'tcv', normalize_per_shot=True):
+                 signal_sampling_rate=1e4, look_ahead=10, machine_id = 'tcv', normalize_per_shot=True,):
 
         self.block_size = block_size
         self.train_subsequence_size = lstm_time_spread
@@ -286,7 +17,8 @@ class SequenceToSequenceStateGenerator(LSTMDataGenerator):
         self.n_classes = n_classes
         super().initialize(shot_ids, batch_size, n_classes, shuffle,lstm_time_spread, epoch_size,
                         train_data_name, conv_w_size, no_input_channels,gaussian_hinterval,
-                        no_classes, stride, labelers,conv_w_offset, fixed_inds, signal_sampling_rate, machine_id, normalize_per_shot)
+                        no_classes, stride, labelers,conv_w_offset, fixed_inds, signal_sampling_rate, machine_id, normalize_per_shot, data_dir)
+        # exit(0)
         self.machine_id = machine_id
         # print('initialized.')
         self.first_prepro_cycle()
@@ -314,7 +46,15 @@ class SequenceToSequenceStateGenerator(LSTMDataGenerator):
         gaussian_hinterval = self.gaussian_hinterval
         count = 0
         for shot in self.shot_ids:
+            # print(self.machine_id, self.data_dir, shot)
+            # exit(0)
             fshot, fshot_times = load_fshot_from_labeler(shot, self.machine_id, self.data_dir)
+            # print(fshot)
+            # exit(0)
+            # fshot['sm_none_label'], fshot['sm_low_label'], fshot['sm_high_label'], fshot['sm_dither_label'] = smoothen_states_values_gauss(fshot.LHD_label.values,
+            #                                                                                                                                     fshot.time.values,
+            #                                                                                                                                     smooth_window_hsize=gaussian_hinterval)
+            #                    
             try:            
             # fshot['sm_elm_label'], fshot['sm_non_elm_label'] = smoothen_elm_values(fshot.ELM_label.values, smooth_window_hsize=gaussian_hinterval)
                 fshot['sm_none_label'], fshot['sm_low_label'], fshot['sm_high_label'], fshot['sm_dither_label'] = smoothen_states_values_gauss(fshot.LHD_label.values,
@@ -530,9 +270,7 @@ def main():
     # lstm_time_spread = int(256)
     source_words_per_sentence = [27]
     target_words_per_sentence = [18]
-    labelers = ['labit', 'ffelici', 'maurizio']
-    labelers=['ffelici']
-    labelers = ['marceca', 'apau']
+    labelers = ['dummy',]
     shuffle=True
     block_size=10
     look_ahead = 60
@@ -553,32 +291,18 @@ def main():
             'target_words_per_sentence':target_words_per_sentence,
             'look_ahead':look_ahead,
             'signal_sampling_rate': signal_sampling_rate,
-            'machine_id': 'tcv'
+            'machine_id': 'DUMMY_MACHINE',
+            'data_dir': '../data/DUMMY_MACHINE/'
             # 'fixed_inds' : ["48580-ffelici/18800"]
             }
-    # shot_ids = (57103,26386,33459,43454,34010,32716,32191,61021,
-    #             30197,31839,60097,60275,32195,32911,59825,53601,34309,30268,33638,
-    #             31650,31554,42514,39872,26383,48580,62744,32794,30310,31211,31807,
-    #             47962,57751,31718,58460,57218,33188,56662,33271,30290,
-    #             33281,30225,58182,32592,30044,30043,29511,33942,45105,52302,
-    #             42197,30262,42062,45103,33446,33567) # 34310 34318 58285 61053 33267 33282 61057
-    # all_shots = (61057,57103,26386,33459,43454,34010,32716,32191,61021,
-    #             30197,31839,60097,60275,32195,32911,59825,53601,34309,30268,33638,
-    #             31650,31554,42514,26383,48580,62744,32794,30310,31211,31807,
-    #             47962,57751,31718,58460,57218,33188,56662,33271,30290,
-    #             33281,30225,58182,32592, 30044,30043,29511,33942,45105,52302,42197,30262,42062,45103,33446,33567) #39872
-    # # shot_ids=(30275,)
-    # # shot_ids=(34010, 32716, 32191, 32195, 32911, 32794, 30310, 31211, 47962, 58182, 32592) # 30225
-    # all_shots=(34010,)
-    # all_shots = ()
-    # print([s[4:9] for s in listdir('./labeled_data/marceca')])
-    # print([s[4:9] for s in listdir('./labeled_data/apau')])
-    # exit(0)
-    all_shots = [int(s[4:9]) for s in listdir('./labeled_data/marceca')]
-    all_shots.extend([int(s[4:9]) for s in listdir('./labeled_data/apau')])
-    all_shots = tuple(set(all_shots))
+   
+    all_shot_fnames = listdir('../data/DUMMY_MACHINE/dummy')
+    # for l in all_shot_fnames:
+    #     print(l)
+    all_shots = []
+    [all_shots.append(shot[14:19]) for shot in all_shot_fnames]
     # all_shots=(64820,)
-    print(all_shots, len(all_shots))
+    # print(all_shots, len(all_shots))
     # exit(0)
     training_generator = SequenceToSequenceStateGenerator(shot_ids=all_shots, **params_lstm_random)
     # training_generator.on_epoch_end()
