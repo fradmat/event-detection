@@ -2,4 +2,5 @@ old/*
 /data/*
 /experiments/*
 code/.ipynb_checkpoints/
+data_access/
 
