@@ -356,10 +356,10 @@ def train(k_fold, train_dir, conv_w_size, num_input_channels, latent_dim, num_tr
       
             total_loss += batch_loss
             total_acc += batch_acc
-            print('Epoch {} Batch {} Loss {:.4f} Acc {:.4f}'.format(epoch + 1,
-                                                         batch_ind + 1,
-                                                         batch_loss.numpy(),
-                                                         batch_acc.numpy()))
+            # print('Epoch {} Batch {} Loss {:.4f} Acc {:.4f}'.format(epoch + 1,
+            #                                              batch_ind + 1,
+            #                                              batch_loss.numpy(),
+            #                                              batch_acc.numpy()))
             
             sys.stdout.flush()
             if batch_ind + 1 == epoch_size:
@@ -374,6 +374,11 @@ def train(k_fold, train_dir, conv_w_size, num_input_channels, latent_dim, num_tr
         if (epoch+1) % 10 == 0:
             print('saving checkpoint...')
             checkpoint.save(file_prefix = checkpoint_prefix)
+            
+        # for batch_ind, batch in enumerate(next(iter(val_generator))):
+        #     val_logits = model(x_batch_val, training=False)
+
+            
     print(encoder.summary())
     print(decoder.summary())
     return encoder, decoder, loss_history
@@ -499,7 +504,7 @@ def predict_beam(k_fold, data_dir, train_dir, labelers, machine_id, encoder, dec
     num_classes=3
     conf_matrix_all = np.zeros((num_classes,num_classes))
     # warnings.filterwarnings("ignore")
-    for shot in val_shots:
+    for sh_ind, shot in enumerate(val_shots):
         print('---------------------------Predicting/evaluating shot', shot, '--------------------------------------------')
         shot_df, fshot_times = load_fshot_from_number(shot, machine_id, data_dir, labelers)
         # start = 2250   #LH transition @ 2450
@@ -598,7 +603,9 @@ def predict_beam(k_fold, data_dir, train_dir, labelers, machine_id, encoder, dec
         
         shot_df['ELM_prob'] = np.zeros(len(shot_df))
         shot_df['LHD_label'] = ground_truth
-        plot_shot_simplified(shot, shot_df, path_plots+'/'+str(shot)+'_prediction.pdf')
+        
+        if sh_ind > 8:
+            plot_shot_simplified(shot, shot_df, path_plots+'/'+str(shot)+'_prediction.pdf')
         # exit(0)
         fname=path_plots+'/'+str(shot)+'_full_prediction.pdf'
         # # plot_shot_full_seq2seq(shot_signals, states_blocks, trans_detected, attention_weights_sequence, times, shot,
@@ -615,7 +622,7 @@ def predict_beam(k_fold, data_dir, train_dir, labelers, machine_id, encoder, dec
         shot_df.to_csv(path_values + 'TCV_' + str(shot) + '_seq2seq_det.csv')
       
         
-    print(conf_matrix_all)
+    # print(conf_matrix_all)
     fname = path_plots+'/global_confusion_matrix.pdf'
     plot_conf_mat(conf_matrix_all, mat_order, fname)
     # exit(0)
@@ -629,7 +636,7 @@ def predict_beam(k_fold, data_dir, train_dir, labelers, machine_id, encoder, dec
     weighted_mean_blocks_k_indexes = k_statistic(shot_det_block_concat, ground_truth_block_concat)
     
     k_indexes = np.asarray(k_indexes)
-    print(k_indexes.shape)
+    # print(k_indexes.shape)
     weighted_mean_k_indexes = np.asarray(weighted_mean_k_indexes)
     # print(weighted_k_indexes.shape)
     histo_fname = path_plots + data_type + '_k_ind_histogram.pdf'
@@ -637,13 +644,14 @@ def predict_beam(k_fold, data_dir, train_dir, labelers, machine_id, encoder, dec
     # plot_kappa_histogram(k_indexes, histo_fname, title)
     # exit(0)
     simple_mean_k_indexes = np.mean(k_indexes, axis=0)
-    print('simple_mean_k_indexes', simple_mean_k_indexes, '. weighted_mean_k_indexes',weighted_mean_k_indexes)
+    # print('simple_mean_k_indexes', simple_mean_k_indexes, '. weighted_mean_k_indexes',weighted_mean_k_indexes)
     
     k_indexes_blocks = np.asarray(k_indexes_blocks)
     simple_mean_k_indexes_block = np.mean(k_indexes_blocks, axis=0)
     plot_kappa_histogram(k_indexes_blocks, histo_fname, title)
-    print('simple_mean_k_indexes_block', simple_mean_k_indexes_block, '. weighted_mean_k_indexes_block',weighted_mean_blocks_k_indexes)
+    # print('simple_mean_k_indexes_block', simple_mean_k_indexes_block, '. weighted_mean_k_indexes_block',weighted_mean_blocks_k_indexes)
     
+    print('Scores as a weighted mean for different possible classes:', weighted_mean_blocks_k_indexes)
     # print(k_indexes_blocks_per_shot)
     # exit(0)
     
@@ -667,7 +675,7 @@ def evaluate(shot_id, data_dir, train_dir, machine_id, labelers, shot_predicted,
             fshot_labeled, fshot_times = load_fshot_from_labeler(shot_id_lab, machine_id, data_dir)
             intersect_times = np.round(sorted(set(np.round(fshot_labeled.time.values,5)) & set(np.round(intersect_times,5))), 5)
             labelers_existing.append(labeler)
-            print('Found shot file for shot ' + str(shot_id) + ' from labeler ' + str(labeler))
+            # print('Found shot file for shot ' + str(shot_id) + ' from labeler ' + str(labeler))
         # print('intersect_times', len(intersect_times))
         except:
             print('Could not find shot file for shot ' + str(shot_id) + ' from labeler ' + str(labeler))
@@ -684,7 +692,7 @@ def evaluate(shot_id, data_dir, train_dir, machine_id, labelers, shot_predicted,
     # print(fshot_equalized.columns)
     # print(shot_predicted.columns)
     labeler_states = np.asarray(labeler_states)
-    print('computing result on ground truth agreed by labelers' + str(labelers_existing))
+    # print('computing result on ground truth agreed by labelers' + str(labelers_existing))
     # print(labeler_states.shape)
     # exit(0)
   #   
@@ -733,7 +741,7 @@ def evaluate(shot_id, data_dir, train_dir, machine_id, labelers, shot_predicted,
     gt_mask = (label_blocks != -1)
     ground_truth_blocks = label_blocks[gt_mask]
     states_blocks = states_blocks[gt_mask]
-    print(ground_truth_blocks.shape, states_blocks.shape)
+    # print(ground_truth_blocks.shape, states_blocks.shape)
     # exit(0)
     
     
@@ -759,8 +767,8 @@ def evaluate(shot_id, data_dir, train_dir, machine_id, labelers, shot_predicted,
     # fshot_equalized.loc[:, 'LHD_label'] = ground_truth
     # shot_predicted_cut['LHD_label'] = ground_truth_cut
     # plot_shot_simplified(shot_id, shot_predicted, train_dir+'/'+str(shot_id)+'prediction.pdf')
-    print('k stat per time', k_st)
-    print('k stat per blocks', k_st_blocks)
+    # print('k stat per time', k_st)
+    print('Cohen`s kappa scores: ', k_st_blocks)
     # exit(0)
     return k_st, ground_truth, ground_truth_cut, shot_predicted, shot_predicted_cut, k_st_blocks, ground_truth_blocks, states_blocks, [conf_mat, mat_order] #.LHD_det.values
 
@@ -910,7 +918,9 @@ def beam_search(input_seq, encoder, decoder, num_outputs, block_size, max_source
             subseq_end_index = subseq_st_index + max_source_sentence_chars
             
             # cumul_remainder += remainder
-            subsequence = input_seq[:, subseq_st_index: subseq_end_index, :]
+            subsequence = input_seq[:, subseq_st_index: subseq_end_index, :num_channels]
+            # print(subsequence.shape)
+            # exit(0)
             # print(k, block_size, subseq_st_index, subseq_end_index, subsequence.shape[1], target_chars_per_source_sentence)
             if subsequence.shape[1] < max_source_sentence_chars: #no more full subsequences to predict on
               # print('breaking')

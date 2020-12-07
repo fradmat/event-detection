@@ -390,7 +390,7 @@ class LSTMDataGenerator():
             #         sub_generator.on_epoch_end()
             # self.on_epoch_end()
             if self.shuffle == True:
-                print('Generator epoch finished, reshuffling...')
+                # print('Generator epoch finished, reshuffling...')
                 self.on_epoch_end()
             
             

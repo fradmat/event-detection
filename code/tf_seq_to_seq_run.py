@@ -10,10 +10,10 @@ mpl.use('Agg')
 from operator import itemgetter
 import sys
 
-def main(args):
-    train_dir = '../experiments/' + sys.argv[1]
+def train_main(args):
+    train_dir = '../experiments/' + args[0]
     params_fixed = load_exp_params(train_dir)
-    print('Will save this model to', train_dir)
+    # print('Will save this model to', train_dir)
     dropout=False
     teacher_forcing = True
     normalize_per_shot = True
@@ -38,7 +38,7 @@ def main(args):
                 'epoch_size': int(params_fixed['epoch_size']), #
                 'num_epochs': int(params_fixed['num_epochs']), #
                 'stride':int(params_fixed['stride']),
-                'data_dir': '../data/',
+                'data_dir': '../data/DUMMY_MACHINE/',
                 'labelers':params_fixed['labelers'].replace(' ', '').split(','),
                 'shuffle':bool(params_fixed['shuffle']),
                 'source_words_per_sentence': [int(n) for n in params_fixed['source_words_per_sentence'].replace(' ', '').split(',')],
@@ -49,10 +49,12 @@ def main(args):
                 'machine_id': params_fixed['machine_id'],
                 'normalize_per_shot':normalize_per_shot
                 }
-    print('---------------------------------------------------------------')
-    print('Using data from ' + params_fixed['machine_id'])
-    print('---------------------------------------------------------------')
-    all_shots = os.listdir('../data')
+    # print('---------------------------------------------------------------')
+    # print('Using data from ' + params_fixed['machine_id'])
+    # print('---------------------------------------------------------------')
+    # all_shots = 
+    all_shots = []
+    [all_shots.append(shot[14:19]) for shot in os.listdir('../data/DUMMY_MACHINE/dummy')]
     shots_per_fold = len(all_shots) // num_k_folds
     np.random.shuffle(all_shots)
     # print(all_shots, len(all_shots))
@@ -89,10 +91,10 @@ def main(args):
         val_shots = list(np.take(all_shots, val_ids))
         # val_shots = [30268, 61057, 30290, 30197, 43454, 30310, 60097, 32794, 60275, 33942, 33281, 42514, 62744, 30225, 29511, 34010, 31211, 34309, 32911, 31807, 33459, 57218, 32191, 58460, 31554, 30262, 45105]
         # val_shots = []
-        print(train_shots)
-        print(val_shots)
-        print('intersection', set(train_shots) & set(val_shots))
-        print('intersection', set(old_val_shots) & set(val_shots))
+        # print(train_shots)
+        # print(val_shots)
+        # print('intersection', set(train_shots) & set(val_shots))
+        # print('intersection', set(old_val_shots) & set(val_shots))
         # continue
        
        
@@ -101,10 +103,12 @@ def main(args):
         train_shots = list(train_shots - val_shots)
         val_shots = list(val_shots)
         assert len(set(train_shots) & set(val_shots)) == 0
-        print('randomized train shot ids', train_shots, len(train_shots))
-        print('randomized val shots ids', val_shots, len(val_shots))
+        print('randomized train shot ids', train_shots, len(train_shots), 'shots')
+        print('randomized val shots ids', val_shots, len(val_shots), 'shots')
         # continue
         params_train['shot_ids'] = train_shots
+        # print(params_train['shot_ids'] )
+        # exit(0)
         # if k > 0:
         #     # assert len(set(train_shots) & set(params_random_train['shot_ids'])) == len(all_shots ) - 2*shots_per_fold
         #     assert len(set(val_shots) & set(params_exp_random['k_folds'][k]['test'])) == 0 #assert no overlap between k-folds
@@ -115,8 +119,11 @@ def main(args):
         params_exp_random['k_folds'][k+1]['test'] = val_shots
         # print(params_exp_random['k_folds'][k+1]['train'])
         # exit(0)
-        print('Training on k-fold', k+1, '...')
+        if num_k_folds > 1:
+            print('Training on k-fold', k+1, '...')
         # continue
+        # print(params_train)
+        # exit(0)
         training_generator = SequenceToSequenceStateGenerator(**params_train)
         params_exp_random['k_folds'][k+1]['norm_factors'] = training_generator.norm_factors
         
@@ -124,6 +131,7 @@ def main(args):
         # exit(0)
         val_generator = []
         save_dic(params_exp_random, train_dir + '/params_exp')
+        # exit(0)
         encoder, decoder, loss_history = train(k+1,
                                 train_dir,
                                 params_train['conv_w_size'],
@@ -141,7 +149,7 @@ def main(args):
                                 params_exp_random['dropout'],
                                 teacher_forcing)
     loss_history = np.asarray(loss_history)
-    print('saving loss history, loss shape = ', loss_history.shape)
+    # print('saving loss history, loss shape = ', loss_history.shape)
     # print(loss_history)
     np.save(train_dir + '/loss_history.npy', loss_history)
     print('Finished. ')
@@ -149,4 +157,4 @@ def main(args):
 if __name__ == '__main__':
     print('running')
     # exit(0)
-    main(sys.argv)
+    train_main(sys.argv[1:])

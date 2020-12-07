@@ -880,8 +880,8 @@ def plot_shot_simplified(shot_id, fshot, directory):
     # exit(0)
     
     pd_ip_classifier = fig.add_subplot(6,1,(1,4))
-    lines = pd_ip_classifier.plot(fshot.time.values, signals)#, fshot.time.values, fshot.IP.values) #*1e19 , label='PD, normalized'
-    pd_ip_classifier.set_ylabel('PD values (norm.) ', labelpad = 0) #  Signal values \n (norm.)    PD values (norm.) 
+    lines = pd_ip_classifier.plot(fshot.time.values, signals, label='Data')#, fshot.time.values, fshot.IP.values) #*1e19 , label='PD, normalized'
+    pd_ip_classifier.set_ylabel('Data values (norm.) ', labelpad = 0) #  Signal values \n (norm.)    PD values (norm.) 
     
     fpad_max = np.max(signals)
     fpad_min = np.min(signals)
@@ -926,13 +926,16 @@ def plot_shot_simplified(shot_id, fshot, directory):
     g_truth_plt.set_xlabel('t(s)')
     g_truth_plt.grid()
     
-    plt.savefig(directory)
-    plt.close('all')
+    # plt.savefig(directory)
+    plt.show()
+    # print('should be showing')
+    # exit(0)
+    # plt.close('all')
     
     # test.close()
     sys.stdout.flush()
     matplotlib.rcParams.update({'font.size': fs})
-    print(directory)
+    # print(directory)
               
 def plot_shot_cnn_viterbi_full(shot_id, fshot, directory, dice_cf, k_statistic):
     print('saving shot plot to ', directory)

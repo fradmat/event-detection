@@ -118,7 +118,7 @@ class NoState(State):
     def __str__(self,):
         return 'N'
 
-def generate_shot(initial_data_value, max_shot_size=20000):
+def generate_shot(initial_data_value, max_shot_size=20000, plot=False):
     transitions_seq = []
     states_seq = []
     initial_state = Low()
@@ -164,33 +164,42 @@ def generate_shot(initial_data_value, max_shot_size=20000):
     times = np.arange(len(data_vals))
     data_min, data_max = np.min(data_vals), np.max(data_vals)
     # print(states_stacked)
-    # plt.plot(times, data_vals)
-    # plt.fill_between(times, data_min, data_max, where = states_seq.astype(int) == 1, facecolor='g', alpha=0.2)
-    # plt.fill_between(times, data_min, data_max, where = states_seq.astype(int) == 3, facecolor='r', alpha=0.2)
-    # plt.fill_between(times, data_min, data_max, where = states_seq.astype(int) == 2, facecolor='y', alpha=0.2)
-    # plt.show()
+    if plot:
+        plt.plot(times, data_vals)
+        plt.fill_between(times, data_min, data_max, where = states_seq.astype(int) == 1, facecolor='g', alpha=0.2)
+        plt.fill_between(times, data_min, data_max, where = states_seq.astype(int) == 3, facecolor='r', alpha=0.2)
+        plt.fill_between(times, data_min, data_max, where = states_seq.astype(int) == 2, facecolor='y', alpha=0.2)
+        plt.show()
     
     return data_vals, states_seq.astype(int)
 
 
-def main(args):
-    
-    num_shots_to_simulate = int(args[1])
+def dummy_data(args):
+    # print('args')
+    num_shots_to_simulate = int(args[0])
     
     print('Generating', num_shots_to_simulate, 'shots.')
     max_shot_size = 20000
     
+    plot = False
     for s in range(num_shots_to_simulate):
         d = np.random.randint(3,10)
-        signal, labels = generate_shot(initial_data_value = d, max_shot_size=max_shot_size)
-        assert (signal > 0).all()
+        # print(s, plot)
+        # print(s)
+        if s == num_shots_to_simulate - 1:
+            plot = True
+        signal, labels = generate_shot(initial_data_value = d, max_shot_size=max_shot_size, plot=plot)
+        if not (signal > 0).all():
+            # print('skipped one')
+            s -= 1
+            continue
         df = pd.DataFrame({'PD': signal,
-                           'IP': np.ones(len(signal)),
-                           'FIR': np.ones(len(signal)),
-                           'DML': np.ones(len(signal)),
+                           'IP': signal,
+                           'FIR': signal,
+                           'DML': signal,
                            'time': np.arange(len(signal))/10000,
                            'LHD_label': labels})
         df.to_csv('../data/DUMMY_MACHINE/dummy/DUMMY_MACHINE_' + str(s).zfill(5) + '_dummy_labeled.csv')
 
 if __name__ == '__main__':
-    main(sys.argv)
+    dummy_data(sys.argv[1:])

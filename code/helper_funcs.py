@@ -787,7 +787,7 @@ def k_statistic(predicted, labeled):
                 score = 0
             k_index += [score]
     mean_k_ind = np.average(np.asarray(k_index), weights=state_trues_pc)
-    print('state_trues_pc ', state_trues_pc)
+    # print('state_trues_pc ', state_trues_pc)
     return np.asarray(k_index + [mean_k_ind])
 
 def confusion_matrix_blocks(predictions, labels, num_classes=3):
@@ -1206,7 +1206,7 @@ def load_dic(name):
         return pickle.load(f)
     
 def load_shot_and_equalize_times(data_dir, shot, labelers, signal_sampling_rate):
-    print('------------------------Reading shot', shot, '------------------------------------')
+    # print('------------------------Reading shot', shot, '------------------------------------')
     
     # fshot = pd.read_csv(data_dir + labelers[0] + '/TCV_'  + str(shot) + '_' + labelers[0] + '_labeled.csv', encoding='utf-8')
     # shot_df = fshot.copy()
@@ -1232,15 +1232,15 @@ def load_shot_and_equalize_times(data_dir, shot, labelers, signal_sampling_rate)
             fshot_labeled = removeNans(fshot_labeled)
             fshot_labeled = fshot_labeled.reset_index(drop=True)
             intersect_times = np.round(sorted(set(np.round(fshot_labeled.time.values,5)) & set(np.round(intersect_times,5))), 5)
-            print('found file for shot ' + str(shot) + ' by labeler ' + labeler +  '.')
+            # print('found file for shot ' + str(shot) + ' by labeler ' + labeler +  '.')
         except:
             # print('problem here at shot', shot, labeler)
-            print('could not find file for shot ' + str(shot) + ' by labeler '+ labeler+'.') #,please check for errors.')
+            # print('could not find file for shot ' + str(shot) + ' by labeler '+ labeler+'.') #,please check for errors.')
             # print("Unexpected error:", sys.exc_info()[0])
             # raise
             continue
         
-    print('length of shot after removing no state, low current, disruption, and NaNs:' + str(len(intersect_times)))
+    # print('length of shot after removing no state, low current, disruption, and NaNs:' + str(len(intersect_times)))
             # print('load_shot_and_equalize_times', len(fshot_labeled))
     return intersect_times
     
@@ -1276,6 +1276,6 @@ def load_exp_params(train_dir):
             params[key.strip()] = val.strip()
             line = fp.readline()
             cnt += 1
-    print(params)
+    # print(params)
     # exit(0)
     return params

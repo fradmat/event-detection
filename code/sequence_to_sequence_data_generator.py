@@ -2,6 +2,8 @@ from lstm_data_generator import *
 from label_smoothing import get_trans_ids
 from os import listdir
 from window_functions import get_states_categorical
+import matplotlib
+# matplotlib.use('Agg')
 
 
 class SequenceToSequenceStateGenerator(LSTMDataGenerator):
@@ -71,7 +73,7 @@ class SequenceToSequenceStateGenerator(LSTMDataGenerator):
             self.shot_dfs[str(shot)] = fshot.copy()
             count += 1
             # exit(0)
-        print('read', str(count), 'shot files.')
+        print('Data generator ready. Read', str(count), 'shot files.')
     
     def third_prepro_cycle(self,):
         # for shot_id in self.shot_ids: #shot_id refers not just to a shot, but also to a labeler of that shot!
@@ -98,7 +100,9 @@ class SequenceToSequenceStateGenerator(LSTMDataGenerator):
                     # source_end = source_ind + source_num_chars + self.look_ahead
                     # print(source_num_chars, look_ahead_source_start, look_ahead_source_end)
                     # exit(0)
-                    signal_subsequence = signal_sequence[source_ind : source_ind + source_num_chars]
+                    signal_subsequence = signal_sequence[source_ind : source_ind + source_num_chars][:, :self.no_input_channels]
+                    # print(signal_subsequence.shape)
+                    # exit(0)
                     times_subsequence = times[source_ind : source_ind + source_num_chars]
                     times_subsequence_disloc = times[source_ind - self.block_size: source_ind + source_num_chars]
                     # there might be a minor bug (non-critical) in the line above
@@ -162,16 +166,18 @@ class SequenceToSequenceStateGenerator(LSTMDataGenerator):
                         # past_windowed_signal[m] = past_signal_subsequence[m*self.stride : m*self.stride+self.conv_w_size] #2:3
                     
                     if trans_in_block:
+                        # print('trans in block')
                         self.trans_samples[source_num_words].append({'input': [windowed_signal,], 'output': [block_sequence, shifted_block_sequence], 'control':[times_subsequence, shot_id]})
                         # plot_windows_blocks(windowed_signal, block_sequence, shifted_block_sequence, times_subsequence, shot_id, self.stride, self.conv_w_size, self.block_size)
                     else:
+                        # print('no trans in block')
                         # print(times_subsequence[0], times_subsequence[-1], windowed_signal[0, 0, 2])
                         self.non_trans_samples[source_num_words].append({'input': [windowed_signal,], 'output': [block_sequence, shifted_block_sequence], 'control':[times_subsequence, shot_id]})
                         # plot_windows_blocks(windowed_signal, block_sequence, shifted_block_sequence, times_subsequence, shot_id, self.stride, self.conv_w_size, self.block_size)
                 random.shuffle(self.trans_samples[source_num_words])
                 random.shuffle(self.non_trans_samples[source_num_words])
         # print(self.trans_samples, self.non_trans_samples)
-        print('Data generator ready. ')
+        # print('Data generator ready. ')
         # exit(0)
             
         
@@ -202,6 +208,7 @@ class SequenceToSequenceStateGenerator(LSTMDataGenerator):
             sample = [self.non_trans_samples[batch_timestep_size].pop(0)]
             self.non_trans_samples[batch_timestep_size].extend(sample)
             batch.extend(sample)
+        # print(sample.shape)
         # exit(0)
         # batch.extend(self.non_trans_samples[:self.batch_size//2])
         # X_scalars, y_block_trans, y_ts, y_sh
@@ -210,6 +217,7 @@ class SequenceToSequenceStateGenerator(LSTMDataGenerator):
         # # exit(0)
         for k in range(len(batch)):
             X_scalars, y_block_trans, y_control = batch[k]['input'], batch[k]['output'], batch[k]['control']
+            # print(X_scalars.shape)
             batch_X_scalars += [X_scalars]
             batch_y_seq += [y_block_trans]
             batch_control += [y_control]
@@ -233,7 +241,7 @@ class SequenceToSequenceStateGenerator(LSTMDataGenerator):
         # checksum = np.ones(batch_y_seq.shape[:-1])
         # print(np.sum(batch_y_seq, axis=-1))
         # assert np.array_equal(checksum, np.sum(batch_y_seq, axis=-1))
-        # print(np.asarray(batch_X_scalars)[:, 0].shape)
+        # print(np.asarray(batch_X_scalars).shape)
         # exit(0)
         return (
                 {
@@ -259,7 +267,7 @@ class SequenceToSequenceStateGenerator(LSTMDataGenerator):
             random.shuffle(self.non_trans_samples[val])
         pass
     
-def main():
+def data_generator_main():
     stateful = False
     compress = True
     randomized_compression = False
@@ -280,7 +288,7 @@ def main():
               # 'lstm_time_spread': lstm_time_spread,
               'epoch_size': 64,
               'train_data_name': 'endtoendrandomizedshot',
-            'no_input_channels' : 4,
+            'no_input_channels' : 1, # returns only 1!
             'conv_w_size':conv_w_size,
             'gaussian_hinterval': int(gaussian_time_window * signal_sampling_rate),
             'stride':convolutional_stride,
@@ -336,7 +344,7 @@ def main():
             if np.any(conv_windows == float('nan')):
                 break
         source_num_chars = convolutional_stride * (encoder_inputs.shape[1] - 1) + conv_w_size
-        print(encoder_inputs.shape, decoder_outputs.shape, source_num_chars)
+        # print(encoder_inputs.shape, decoder_outputs.shape, source_num_chars)
         counter += 1
         if counter == params_lstm_random['batch_size']:
             break
@@ -357,11 +365,14 @@ def main():
     # print(conv_windows.shape)
     # exit(0)
     # , past_conv_windows[k]
-    for k in range(params_lstm_random['batch_size']):
+    # for k in range(params_lstm_random['batch_size']):
+    for k in range(1):
         plot_windows_blocks_states(conv_windows[k], block_sequences[k], shifted_block_sequences[k], sequence_times[k], sequence_shots[k], convolutional_stride, conv_w_size, block_size, look_ahead)
+        
+        
         # source_num_chars = convolutional_stride * (conv_windows[k].shape[1] - 1) + conv_w_size
         # print('batch with -> conv_windows:', conv_windows[k].shape, 'based on', source_num_chars, 'time slices. block_sequences:', block_sequences[k].shape, shifted_block_sequences[k].shape, sequence_times.shape, sequence_shots.shape)
         
         
 if __name__ == '__main__':
-    main()
+    data_generator_main()

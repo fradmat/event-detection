@@ -1,25 +1,30 @@
+import os
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'  # or any {'0', '1', '2'}
+import tensorflow as tf
+import logging
+logger = tf.get_logger()
+logger.setLevel(logging.ERROR)
 import sys
 from sequence_to_sequence_data_generator import *
-import tensorflow as tf
 tf.keras.backend.set_floatx('float32')
 from tf_seq_to_seq import *
-import os.path
 import warnings
 warnings.filterwarnings("ignore")
 import matplotlib
-matplotlib.use('Agg')
+# matplotlib.use('Agg')
+# os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'  # FATAL
 
-def main(args):
-    train_dir = './experiments/' + args[1]
+def eval_main(args):
+    train_dir = '../experiments/' + args[0]
     params_exp = load_dic(train_dir + '/params_exp')
-    print('-------------------------------------------------------------Experiment Parameters-------------------------------------------------------------------')
-    for param in params_exp.keys():
-        print(param, ':', params_exp[param])
+    # print('-------------------------------------------------------------Experiment Parameters-------------------------------------------------------------------')
+    # for param in params_exp.keys():
+    #     print(param, ':', params_exp[param])
     # exit(0)
-    beam_width = int(args[2])
-    chkpt = args[3]
-    train_or_val = args[4]
-    print('beam_width :', beam_width)
+    beam_width = int(args[1])
+    chkpt = args[2]
+    train_or_val = args[3]
+    # print('beam_width :', beam_width)
     # print('-------------------------------------------------------------------------------------------------------------------------------------------------------')
     sys.stdout.flush()
     conv_w_size=params_exp['conv_w_size']
@@ -46,25 +51,27 @@ def main(args):
     # print(args[0])
     # exit(0)
     # machine_id = params_exp['machine_id']
-    machine_id = 'TCV'
-    data_dir = params_exp['data_dir'] + '/' + machine_id +'/'
+    machine_id = 'DUMMY_MACHINE'
+    data_dir = params_exp['data_dir'] 
     
     k_indexes_train_folds = []
     k_indexes_val_folds = []
     # for k_fold in params_exp['k_folds'].keys():
     decoder_type, decoder_type_spec = decoder_type.split('-')
-    print(decoder_type, decoder_type_spec)
+    # print(decoder_type, decoder_type_spec)
     
     norm_factors = {}
     
     for k_fold in params_exp['k_folds'].keys():
-        print('---------------------------------------------------fetching results for k-fold', k_fold, '-------------------------------------------------------------')
+        
         k_fold_vals = params_exp['k_folds'][k_fold]
         train_shots = k_fold_vals['train']
         val_shots = k_fold_vals['test']
         #norm_factors = params_exp['k_folds'][k_fold]['norm_factors']
         norm_factors = {}
-        print('Current k-fold:', k_fold, '. Train shots:', train_shots,' Validation shots:', val_shots)
+        if len(params_exp['k_folds'].keys()) > 1:
+            print('-----------------fetching results for k-fold', k_fold, '-------------------')
+            print('Current k-fold:', k_fold, '. Train shots:', train_shots,' Validation shots:', val_shots)
         #print(norm_factors)
         #exit(0)
         
@@ -126,14 +133,14 @@ def main(args):
         if len(shot_ids) > 0:
             simple_mean_k_indexes, weighted_mean_k_indexes = predict_beam(k_fold, data_dir, train_dir, labelers, machine_id, encoder, decoder,
                                                                      num_transitions, block_size, max_source_sentence_chars, conv_w_size,
-                                                                    stride, latent_dim, num_input_channels, shot_ids[:1],
+                                                                    stride, latent_dim, num_input_channels, shot_ids,
                                                                     max_source_sentence_words, max_target_words, look_ahead,
                                                                     0,1000000000, train_or_val, beam_width, decoder_type, chkpt, norm_factors,verbose=False) #2250 400 30000
             k_indexes_val_folds.append(simple_mean_k_indexes)
 
-    print(encoder.layers[0])
-    print(encoder.summary())
-    print(decoder.summary())
+    # print(encoder.layers[0])
+    # print(encoder.summary())
+    # print(decoder.summary())
     # k_indexes_train_folds = np.asarray(k_indexes_train_folds)
     # k_indexes_val_folds = np.asarray(k_indexes_val_folds)
     # print(k_indexes_train_folds.shape)
@@ -143,4 +150,4 @@ def main(args):
     print('Finished. ')
     
 if __name__ == '__main__':
-    main(sys.argv)
+    eval_main(sys.argv[1:])

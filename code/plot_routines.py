@@ -380,7 +380,7 @@ def plot_windows_blocks(conv_windows, transition_blocks, shifted_transition_bloc
     plt.show()
     
 def plot_windows_blocks_states(conv_windows, transition_blocks, shifted_transition_blocks, times, shot, stride=10, conv_size=40, block_size=10, look_ahead=10):
-    font = {'family' : 'normal',
+    font = {#'family' : 'normal',
         # 'weight' : 'bold',
         'size'   : 16}
     
@@ -398,10 +398,10 @@ def plot_windows_blocks_states(conv_windows, transition_blocks, shifted_transiti
         # print('w', w)
         times_to_plot = times[w*stride : w*stride+conv_size]
         
-        p1.plot(times_to_plot, conv_windows[w, :, 0], color='m', label='FIR')
-        p1.plot(times_to_plot, conv_windows[w, :, 1], color='g', label='DML')
-        p1.plot(times_to_plot, conv_windows[w, :, 2], color='b', label='PD')
-        p1.plot(times_to_plot, conv_windows[w, :, 3], color='c', label='IP')
+        p1.plot(times_to_plot, conv_windows[w, :, 0], color='m', label='Data')
+        # p1.plot(times_to_plot, conv_windows[w, :, 1], color='g', label='DML')
+        # p1.plot(times_to_plot, conv_windows[w, :, 2], color='b', label='PD')
+        # p1.plot(times_to_plot, conv_windows[w, :, 3], color='c', label='IP')
     p1.set_xlim(times[0], times[-1])    
     p1.set_title('Encoder Input (windowed signal values)' + str(conv_windows.shape))
     p1.grid()
@@ -472,7 +472,7 @@ def plot_windows_blocks_states(conv_windows, transition_blocks, shifted_transiti
     handles, labels = plt.gca().get_legend_handles_labels()
     by_label = dict(zip(labels, handles))
     plt.legend(by_label.values(), by_label.keys(), ncol=len(labels))
-    plt.suptitle('#' + shot)
+    # plt.suptitle('#' + shot)
     plt.tight_layout()
     plt.show()
     
