@@ -1,5 +1,5 @@
 old/*
-*.ipynb*
 /data/*
 /experiments/*
+code/.ipynb_checkpoints/
 
